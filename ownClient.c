@@ -26,10 +26,11 @@ int main(int argc, char *argv[]){
 	struct hostent *he;
 	int numbytes;
 	char buffer[80];
+	char username[10];
 	int addr_len = sizeof(struct sockaddr);
 
-	if (argc != 2) {
-		fprintf(stderr,"use: clientProgramName serverIPaddr\n");
+	if (argc != 3) {
+		fprintf(stderr,"use: clientProgramName serverIPaddr username[10]\n");
 		exit(1);
 	}
 
@@ -38,6 +39,16 @@ int main(int argc, char *argv[]){
 		perror("gethostbyname");
 		exit(1);
 	}
+
+	//check username length
+	if (sizeof(argv[2] > 10))
+	{
+		fprintf(stderr,"username has to be 10 characters maximum\n");
+		exit(1);
+	}
+
+	strcpy(username, argv[2]);
+
 	//socket("tcp-ip", "datagram", "udp")
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		perror("socket");
@@ -48,6 +59,12 @@ int main(int argc, char *argv[]){
 	server.sin_port = htons(PORT); 
 	server.sin_addr = *((struct in_addr *)he->h_addr);
 	memset(&(server.sin_zero), '\0', 8); 
+
+	if ((numbytes=sendto(sockfd, username, strlen(username), 0,
+				(struct sockaddr *)&server, sizeof(struct sockaddr))) == -1){
+			perror("sendto");
+			exit(1);
+		}
 
 	do{
 // Read a string from command line

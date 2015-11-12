@@ -22,13 +22,16 @@
 typedef struct
 {
 	struct sockaddr_in addr; 
-	string username; 
+	char username[10]; 
 
 } addrUsername;
 
 //structure to hold 30 addresses
 int ADDR_BUFFER_SIZE = 30; 
 struct addrUsername addrBuff[ADDR_BUFFER_SIZE];
+int addrBuffTail = 0; 
+
+int length, i;
 
 int main(void){
 	int sockfd;
@@ -73,48 +76,57 @@ int main(void){
 		printf("Received from %s/%d: %s\n",inet_ntoa(client.sin_addr), 
 						ntohs(client.sin_port), buffer);
 
-		//if address is in array
+		if (isAddrInBuff(client))
+		{
 			//add username to message or something
-			//for loop to send message to every address in array
 
-		//else 
-
-			//add address & username to struct
-
-
-		addAddressToBuff(client);
-
-// Send modified string to client
-		if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0, 
-			(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
-			perror("sendto");
-			exit(1);
+			length = sizeof addrBuff / sizeof addrBuff[0]; 
+			for (i=0; i<length; i++)
+			{
+				if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0, 
+					(struct sockaddr *)&(addrBuff[i].addr), sizeof(struct sockaddr))) == -1){
+					perror("sendto");
+					exit(1);
+				}
+			}
 		}
+		else 
+		{
+			if (sizeof(buffer) > 10)
+			{
+				//send username too long or something
+			} 
+			addAddressToBuff(client, buffer);
+		}
+
+		//DELETING THE USERNAME && IP WHEN CLIENT ENDING!!!
 
 	}while(1);
 	close(sockfd);
 	return 0;
 }
 
-void addAddressToBuff(sockaddr_in *addr){
+void addAddressToBuff(sockaddr_in *addr, char *username){
+
+	struct addrUsername newStruct; 
+	strcpy(newStruct.username, username); 
+	newStruct.addr = addr; 
+
 	assert(addrBuffTail >= 0 && addrBuffTail < ADDR_BUFFER_SIZE);
-    addrBuff[addrBuffTail++] = *addr;
+    addrBuff[addrBuffTail++] = newStruct;
     if (addrBuffTail >= ADDR_BUFFER_SIZE)
         addrBuffTail = 0;
 }
 
 bool isAddrInBuff(sockaddr_in *addr){
 
-	int length = sizeof addrBuff / sizeof addrBuff[0]; 
+	length = sizeof addrBuff / sizeof addrBuff[0]; 
 
-	for (int i = 0; i<addrBuff.length; i++)
+	for (i = 0; i<addrBuff.length; i++)
 	{
 		if (addrBuff[i].addr.sin_addr.s_addr == *addr.sin_addr.s_addr)
 		{
-			if (addrBuff[i].addr.sin_port == *addr.sin_port)
-			{
-				return true; 
-			}
+			return true; 
 		}
 	}
 	return false; 
