@@ -21,11 +21,14 @@
 
 typedef struct
 {
-	struct sockaddr_in; 
+	struct sockaddr_in addr; 
 	string username; 
 
 } addrUsername;
 
+//structure to hold 30 addresses
+int ADDR_BUFFER_SIZE = 30; 
+struct addrUsername addrBuff[ADDR_BUFFER_SIZE];
 
 int main(void){
 	int sockfd;
@@ -33,10 +36,6 @@ int main(void){
 	struct sockaddr_in client; //identify client
 	int addr_len, numbytes; //sturcture length and number of bytes
 	char buffer[80];
-
-	//structure to hold 30 addresses
-	int ADDR_BUFFER_SIZE = 30; 
-	struct addrUsername addrBuff[ADDR_BUFFER_SIZE];
 
 	//Technically socket is a connection IP-PORT connected to IP-PORT
 	//From own perspective it is the other machines IP-PORT
@@ -102,4 +101,21 @@ void addAddressToBuff(sockaddr_in *addr){
     addrBuff[addrBuffTail++] = *addr;
     if (addrBuffTail >= ADDR_BUFFER_SIZE)
         addrBuffTail = 0;
+}
+
+bool isAddrInBuff(sockaddr_in *addr){
+
+	int length = sizeof addrBuff / sizeof addrBuff[0]; 
+
+	for (int i = 0; i<addrBuff.length; i++)
+	{
+		if (addrBuff[i].addr.sin_addr.s_addr == *addr.sin_addr.s_addr)
+		{
+			if (addrBuff[i].addr.sin_port == *addr.sin_port)
+			{
+				return true; 
+			}
+		}
+	}
+	return false; 
 }
