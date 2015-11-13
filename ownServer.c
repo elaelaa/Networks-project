@@ -87,10 +87,10 @@ int main(void){
 		{
 			//add username to message or something
 
-			length = sizeof(addrBuff) / sizeof(addrBuff[0]); 
-			for (i=0; i<length-1; i++)
+			for (i=0; i<addrBuffTail; i++)
 			{
-				printf("Sending to buffer %s \n", inet_ntoa(addrBuff[i].addr.sin_addr));
+				//printf("Sending to buffer %s/%d: %s\n , buffer length %d\n", inet_ntoa(addrBuff[i].addr.sin_addr), 
+				//		ntohs(addrBuff[i].addr.sin_port), buffer, addrBuffTail);
 				if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0, 
 					(struct sockaddr *)&(addrBuff[i].addr), sizeof(struct sockaddr))) == -1){
 					perror("sendto");
@@ -122,8 +122,8 @@ void addAddressToBuff(struct sockaddr_in addr, char *username){
 
 	assert(addrBuffTail >= 0 && addrBuffTail < ADDR_BUFFER_SIZE);
     addrBuff[addrBuffTail++] = newStruct;
-    if (addrBuffTail >= ADDR_BUFFER_SIZE)
-        addrBuffTail = 0;
+    //if (addrBuffTail >= ADDR_BUFFER_SIZE)
+    //    addrBuffTail = 0;
 }
 
 bool isAddrInBuff(struct sockaddr_in *addr){
