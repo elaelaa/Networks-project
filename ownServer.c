@@ -5,8 +5,8 @@
 	así como la dirección y puerto del emisor.
 	Contesta con el string recibido en mayúsculas
 */
-
-
+#include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -26,10 +26,13 @@ typedef struct
 
 } addrUsername;
 
+bool isAddrInBuff(struct sockaddr_in *addr);
+void addAddressToBuff(struct sockaddr_in addr, char *username);
+
 //structure to hold 30 addresses
-int ADDR_BUFFER_SIZE = 30; 
-struct addrUsername addrBuff[ADDR_BUFFER_SIZE];
-int addrBuffTail = 0; 
+int ADDR_BUFFER_SIZE; 
+addrUsername addrBuff[30];
+int addrBuffTail; 
 
 int length, i;
 
@@ -39,6 +42,10 @@ int main(void){
 	struct sockaddr_in client; //identify client
 	int addr_len, numbytes; //sturcture length and number of bytes
 	char buffer[80];
+
+	//initialize global variables
+	ADDR_BUFFER_SIZE = 30; 
+	addrBuffTail = 0; 
 
 	//Technically socket is a connection IP-PORT connected to IP-PORT
 	//From own perspective it is the other machines IP-PORT
@@ -76,13 +83,14 @@ int main(void){
 		printf("Received from %s/%d: %s\n",inet_ntoa(client.sin_addr), 
 						ntohs(client.sin_port), buffer);
 
-		if (isAddrInBuff(client))
+		if (isAddrInBuff(&client))
 		{
 			//add username to message or something
 
-			length = sizeof addrBuff / sizeof addrBuff[0]; 
-			for (i=0; i<length; i++)
+			length = sizeof(addrBuff) / sizeof(addrBuff[0]); 
+			for (i=0; i<length-1; i++)
 			{
+				printf("Sending to buffer %s \n", inet_ntoa(addrBuff[i].addr.sin_addr));
 				if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0, 
 					(struct sockaddr *)&(addrBuff[i].addr), sizeof(struct sockaddr))) == -1){
 					perror("sendto");
@@ -106,9 +114,9 @@ int main(void){
 	return 0;
 }
 
-void addAddressToBuff(sockaddr_in *addr, char *username){
+void addAddressToBuff(struct sockaddr_in addr, char *username){
 
-	struct addrUsername newStruct; 
+	addrUsername newStruct; 
 	strcpy(newStruct.username, username); 
 	newStruct.addr = addr; 
 
@@ -118,16 +126,16 @@ void addAddressToBuff(sockaddr_in *addr, char *username){
         addrBuffTail = 0;
 }
 
-bool isAddrInBuff(sockaddr_in *addr){
+bool isAddrInBuff(struct sockaddr_in *addr){
 
-	length = sizeof addrBuff / sizeof addrBuff[0]; 
+	length = sizeof(addrBuff) / sizeof (addrBuff[0]); 
 
-	for (i = 0; i<addrBuff.length; i++)
+	for (i = 0; i<length; i++)
 	{
-		if (addrBuff[i].addr.sin_addr.s_addr == *addr.sin_addr.s_addr)
+		if (addrBuff[i].addr.sin_addr.s_addr == (&addr->sin_addr)->s_addr)
 		{
-			return true; 
+			return 1; 
 		}
 	}
-	return false; 
+	return 0; 
 }

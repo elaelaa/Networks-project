@@ -41,7 +41,7 @@ int main(int argc, char *argv[]){
 	}
 
 	//check username length
-	if (sizeof(argv[2] > 10))
+	if (sizeof(argv[2]) > 10)
 	{
 		fprintf(stderr,"username has to be 10 characters maximum\n");
 		exit(1);
