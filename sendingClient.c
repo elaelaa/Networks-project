@@ -40,11 +40,11 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
-	username = argv[2];
-	if (strlen(username)>10){
+	if (strlen(argv[2])>10){
 		perror("username too long");
 		exit(1);
 	}
+	strcpy(username, argv[2]);
 
 	//socket("tcp-ip", "datagram", "udp")
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]){
 			exit(1);
 		}
 		printf("Sent %d bytes to %s\n", numbytes, inet_ntoa(server.sin_addr));
-		
+
 	} while (strcmp(buffer,"Q") != 0);
 
 	close(sockfd);
