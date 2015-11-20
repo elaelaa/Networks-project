@@ -25,7 +25,7 @@ int main(int argc, char *argv[]){
 	struct sockaddr_in me;    //identify self
 	struct sockaddr_in client; //identify client
 	int addr_len, numbytes; //sturcture length and number of bytes
-	char buffer[80];
+	char buffer[92]; //longer buffer to be able to receive also username
 
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		perror("Socket error");
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]){
 
 	do{
 		// Receive string from server
-		if ((numbytes=recvfrom(sockfd, buffer, 80-1 , 0, 
+		if ((numbytes=recvfrom(sockfd, buffer, 92-1 , 0, 
 				(struct sockaddr *) &client, &addr_len)) == -1) {
 			perror("Error in recvfrom");
 			exit(1);

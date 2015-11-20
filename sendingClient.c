@@ -26,11 +26,11 @@ int main(int argc, char *argv[]){
 	struct hostent *he;
 	int numbytes;
 	char buffer[80];
-	char *username;
+	char username[10];
 	int addr_len = sizeof(struct sockaddr);
 
 	if (argc != 3) {
-		fprintf(stderr,"use: clientProgramName serverIPaddr username\n");
+		fprintf(stderr,"use: clientProgramName serverIPaddr username[10]\n");
 		exit(1);
 	}
 
@@ -40,8 +40,11 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
-	//Username length doesn't need to be checked anymore
-	username = strdup(argv[2]);
+	username = argv[2];
+	if (strlen(username)>10){
+		perror("username too long");
+		exit(1);
+	}
 
 	//socket("tcp-ip", "datagram", "udp")
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -54,7 +57,7 @@ int main(int argc, char *argv[]){
 	server.sin_addr = *((struct in_addr *)he->h_addr);
 	memset(&(server.sin_zero), '\0', 8); 
 
-	//Send given username and password
+	//Send given username
 	if ((numbytes=sendto(sockfd, username, strlen(username), 0,
 				(struct sockaddr *)&server, sizeof(struct sockaddr))) == -1){
 			perror("sendto");
@@ -67,15 +70,20 @@ int main(int argc, char *argv[]){
 			exit(1);
 		}
 		buffer[numbytes] = '\0';
-		printf("Received from %s/%d: %s\n",inet_ntoa(server.sin_addr), ntohs(server.sin_port), buffer);
+		//printf("Received from %s/%d: %s\n",inet_ntoa(server.sin_addr), ntohs(server.sin_port), buffer);
 		if (strcmp("usrErr", buffer) != 0)
 		{
 			printf("%s\n", buffer);
 			break;
 		}
-		printf("Username not available. Write a new one: ");
+		printf("Username not available. Write a new one: \n");
 		fgets(buffer, 80, stdin);
 		buffer[strlen(buffer)-1] = '\0';
+		while(strlen(buffer)>10){
+			printf("Username too long. Write a new one: \n");
+			fgets(buffer, 80, stdin);
+			buffer[strlen(buffer)-1] = '\0';
+		}
 		if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0,
 				(struct sockaddr *)&server, sizeof(struct sockaddr))) == -1){
 			perror("sendto");
@@ -83,7 +91,6 @@ int main(int argc, char *argv[]){
 		}
 	}while(1);
 
-	//Receive OK or request for new username ??
 	do{
 // Read a string from command line
 		printf("Write a message: ");
@@ -96,14 +103,7 @@ int main(int argc, char *argv[]){
 			exit(1);
 		}
 		printf("Sent %d bytes to %s\n", numbytes, inet_ntoa(server.sin_addr));
-// Received modified  string from server
-		/*if ((numbytes=recvfrom(sockfd, buffer, 80-1 , 0, (struct sockaddr *) &server, &addr_len)) == -1) {
-			perror("Error in recvfrom");
-			exit(1);
-		}
-		buffer[numbytes] = '\0';
-		printf("Received from %s/%d: %s\n",inet_ntoa(server.sin_addr), ntohs(server.sin_port), buffer);
-	*/
+		
 	} while (strcmp(buffer,"Q") != 0);
 
 	close(sockfd);
