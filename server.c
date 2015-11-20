@@ -32,6 +32,7 @@ int addAddressToBuff(struct sockaddr_in addr, char *username);
 bool isUsernameAvailable(char *username);
 void deleteAddr(struct sockaddr_in *addr);
 char *getUserName(struct sockaddr_in *addr);
+bool isInBuffer(struct sockaddr_in *addr);
 
 //pointer to the first addrUsername structure in list
 struct addrUsername *first = NULL; 
@@ -82,20 +83,14 @@ int main(void){
 		printf("Received from %s/%d: %s\n",inet_ntoa(client.sin_addr), 
 						ntohs(client.sin_port), buffer);
 
-		char tempbuff[92]; 
-
-		//get the username to temporary buffer, the buffer is NULL if no username 
-		if (getUserName(&client)){
-			printf("wasusername");
-		}
-		else{
-			printf("no username"); 
-		}
-		//strcpy(tempbuff, "");
-
-		if (strlen(tempbuff) > 0 ) 
+		if (isInBuffer(&client)) 
 		{
+
 			//CHECK IF PRIVATE MESSAGE OR QUIT MESSAGE 
+
+			char tempbuff[92]; 
+			//copy the username to tempbuff
+			strcpy(tempbuff, getUserName(&client));
 
 			//add message (buffer) to tempbuff which contains the username
 			strcat(tempbuff, ": ");
@@ -118,7 +113,6 @@ int main(void){
 		{
 			if (!isUsernameAvailable(buffer))
 			{
-				printf("Username not available");
 				if ((numbytes=sendto(sockfd, "usrErr", strlen(buffer), 0, 
 					(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
 					perror("sendto");
@@ -242,6 +236,21 @@ char *getUserName(struct sockaddr_in *addr){
 	return NULL; 
 }
 
+bool isInBuffer(struct sockaddr_in *addr){
+	struct addrUsername *current; 
+	current = first; 
+	//loop to go thourgh all the addresses and check if the wanted address is found
+	while (current != NULL)
+	{
+		if (((current->addr).sin_addr).s_addr == (&addr->sin_addr)->s_addr)
+		{
+			return 1; 
+		}
+		current = current->next; 
+	}
+	return 0; 
+}
+
 bool isUsernameAvailable(char *username){
 	struct addrUsername *current; 
 	current = first; 
@@ -249,10 +258,10 @@ bool isUsernameAvailable(char *username){
 	{
 		if (strcmp(current->username, username) == 0)
 		{
-			return 1;
+			return 0;
 		}
 	}
-	return 0; 
+	return 1; 
 }
 
 void deleteAddr(struct sockaddr_in *addr){
