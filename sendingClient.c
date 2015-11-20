@@ -23,11 +23,12 @@
 
 void endHandler(int dummy); //handles ending with ctrl+c
 
+int numbytes;
+int sockfd;
+struct sockaddr_in server;
+
 int main(int argc, char *argv[]){
-	int sockfd;
-	struct sockaddr_in server;
 	struct hostent *he;
-	int numbytes;
 	char buffer[80];
 	char username[10];
 	int addr_len = sizeof(struct sockaddr);
@@ -109,7 +110,7 @@ int main(int argc, char *argv[]){
 		}
 		printf("Sent %d bytes to %s\n", numbytes, inet_ntoa(server.sin_addr));
 
-	} while (strcmp(buffer,"Q") != 0);
+	} while (strcmp(buffer,"/q") != 0);
 
 	close(sockfd);
 	return 0;
@@ -121,4 +122,7 @@ void endHandler(int dummy) {
 			perror("sendto");
 			exit(1);
 		}
+		
+	close(sockfd);
+	exit(0); 
 }

@@ -33,6 +33,8 @@ bool isUsernameAvailable(char *username);
 void deleteAddr(struct sockaddr_in *addr);
 char *getUserName(struct sockaddr_in *addr);
 bool isInBuffer(struct sockaddr_in *addr);
+bool startsWith(const char *pre, const char *str); 
+struct sockaddr_in getAddrByUsername(char *username);
 
 //pointer to the first addrUsername structure in list
 struct addrUsername *first = NULL; 
@@ -85,35 +87,84 @@ int main(void){
 
 		if (isInBuffer(&client)) 
 		{
-
-			if (strcmp(buffer,"/q") == 0){
-
-			}
-
-			if (strcmp(buffer,"/p") == 0){
-				
-			}
-
-
-			char tempbuff[92]; 
+			char tempbuff[110]; 
 			//copy the username to tempbuff
 			strcpy(tempbuff, getUserName(&client));
-			printf("%s\n", tempbuff); 
-			//add message (buffer) to tempbuff which contains the username
-			strcat(tempbuff, ": ");
-			strcat(tempbuff, buffer);
 
-			current = first; 
-			while (current != NULL)
-			{
-				printf("Send to %s/%d: %s\n",inet_ntoa((current->addr).sin_addr), ntohs((current->addr).sin_port), buffer);
-				if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
-					(struct sockaddr *)&(current->addr), sizeof(struct sockaddr))) == -1){
-					perror("sendto");
-					exit(1);
+			//if the string received is /q the user wants to quit and is deleted from the address list
+			if (strcmp(buffer,"/q") == 0){
+				deleteAddr(&client);
+				current = first; 
+				strcat(tempbuff, " just left the chat.");
+				while (current)
+				{
+					if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
+						(struct sockaddr *)&(current->addr), sizeof(struct sockaddr))) == -1){
+						perror("sendto");
+						exit(1);
+					}
+					current = current->next; 
 				}
+			}
+			else if (startsWith("/p ", buffer)){
 
-				current = current->next; 
+			   char senderUsername[10];
+			   strcpy(senderUsername, tempbuff);
+
+			   const char s[2] = " ";
+			   char *token;
+			   
+			   /* get the first token */
+			   token = strtok(buffer, s);	
+			   token = strtok(NULL, s);
+			   char receiverUsername[10];
+			   char tempmsg[70];
+			   strcpy(receiverUsername, token);
+
+			   while( token != NULL ) 
+			   {
+			   		token = strtok(NULL, s);
+			   		strcat(tempmsg, token);
+			   }
+
+			   sprintf(tempbuff, "PrivateMSG from %s: %s", senderUsername, tempmsg);
+
+			   client = getAddrByUsername(receiverUsername);
+			   if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
+						(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
+						perror("sendto");
+						exit(1);
+					}
+
+				sprintf(tempbuff, "PrivateMSG to %s: %s", receiverUsername, tempmsg);
+
+				client = getAddrByUsername(senderUsername);
+			   	if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
+						(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
+						perror("sendto");
+						exit(1);
+					}
+
+
+			}
+			else{
+				printf("%s\n", tempbuff); 
+				//add message (buffer) to tempbuff which contains the username
+				strcat(tempbuff, ": ");
+				strcat(tempbuff, buffer);
+
+				current = first; 
+				while (current != NULL)
+				{
+					printf("Send to %s/%d: %s\n",inet_ntoa((current->addr).sin_addr), ntohs((current->addr).sin_port), buffer);
+					if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
+						(struct sockaddr *)&(current->addr), sizeof(struct sockaddr))) == -1){
+						perror("sendto");
+						exit(1);
+					}
+
+					current = current->next; 
+				}
 			}
 		}
 		else 
@@ -166,8 +217,6 @@ int main(void){
 				free(username);
 			}
 		}
-
-		//DELETING THE USERNAME && IP WHEN CLIENT ENDING!!!
 
 	}while(1);
 	close(sockfd);
@@ -272,6 +321,20 @@ bool isUsernameAvailable(char *username){
 	return 1; 
 }
 
+struct sockaddr_in getAddrByUsername(char *username){
+	struct addrUsername *current; 
+	current = first; 
+	while (current != NULL)
+	{
+		if (strcmp(current->username, username) == 0)
+		{
+			return current->addr; 
+		}
+		current = current->next; 
+	}
+}
+
+
 void deleteAddr(struct sockaddr_in *addr){
 	struct addrUsername *current; 
 	struct addrUsername *former = NULL; 
@@ -300,9 +363,15 @@ void deleteAddr(struct sockaddr_in *addr){
 		//the one to delete is the first one
 		//if there is next for the current, the next becomes the first
 		//if there is no next, the next points to NULL and first becomes NULL
-		first->next; 
+		first = next; 
 	}
 	//free the memory allocated for the addrUsername structure
 	free(current->username);
 	free(current);
+}
+
+bool startsWith(const char *pre, const char *str)
+{
+   if(strncmp(pre, str, strlen(pre)) == 0) return 1;
+   return 0;
 }

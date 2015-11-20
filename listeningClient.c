@@ -18,14 +18,14 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define PORT 7000  //listening in Port 6000, if changed needs change also in server
+#define PORT 7000  //listening in Port 7000, if changed needs change also in server
 
 int main(int argc, char *argv[]){
 	int sockfd;
 	struct sockaddr_in me;    //identify self
 	struct sockaddr_in client; //identify client
 	int addr_len, numbytes; //sturcture length and number of bytes
-	char buffer[92]; //longer buffer to be able to receive also username
+	char buffer[110]; //longer buffer to be able to receive also username
 
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		perror("Socket error");
@@ -43,11 +43,11 @@ int main(int argc, char *argv[]){
 	}
 
 	addr_len = sizeof(struct sockaddr);
-	printf("Listening port 6000, open sending client to log on to chat and send messages\n");
+	printf("Listening port 7000, open sending client to log on to chat and send messages\n");
 
 	do{
 		// Receive string from server
-		if ((numbytes=recvfrom(sockfd, buffer, 92-1 , 0, 
+		if ((numbytes=recvfrom(sockfd, buffer, 110-1 , 0, 
 				(struct sockaddr *) &client, &addr_len)) == -1) {
 			perror("Error in recvfrom");
 			exit(1);
