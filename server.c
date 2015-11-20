@@ -85,9 +85,15 @@ int main(void){
 		char tempbuff[92]; 
 
 		//get the username to temporary buffer, the buffer is NULL if no username 
-		strcpy(tempbuff, getUserName(&client));
+		if (getUserName(&client)){
+			printf("wasusername");
+		}
+		else{
+			printf("no username"); 
+		}
+		//strcpy(tempbuff, "");
 
-		if (tempbuff)
+		if (strlen(tempbuff) > 0 ) 
 		{
 			//CHECK IF PRIVATE MESSAGE OR QUIT MESSAGE 
 
@@ -158,7 +164,6 @@ int main(void){
 				}
 				free(username);
 			}
-			free(tempbuff);
 		}
 
 		//DELETING THE USERNAME && IP WHEN CLIENT ENDING!!!
