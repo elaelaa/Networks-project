@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define PORT 6000  //listening in Port 6000, if changed needs change also in server
+#define PORT 7000  //listening in Port 6000, if changed needs change also in server
 
 int main(int argc, char *argv[]){
 	int sockfd;

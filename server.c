@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 
 #define PORT 5000 //define port
-#define CPORT 6000 //define listening client port
+#define CPORT 7000 //define listening client port
 
 struct addrUsername
 {
@@ -86,12 +86,19 @@ int main(void){
 		if (isInBuffer(&client)) 
 		{
 
-			//CHECK IF PRIVATE MESSAGE OR QUIT MESSAGE 
+			if (strcmp(buffer,"/q") == 0){
+
+			}
+
+			if (strcmp(buffer,"/p") == 0){
+				
+			}
+
 
 			char tempbuff[92]; 
 			//copy the username to tempbuff
 			strcpy(tempbuff, getUserName(&client));
-
+			printf("%s\n", tempbuff); 
 			//add message (buffer) to tempbuff which contains the username
 			strcat(tempbuff, ": ");
 			strcat(tempbuff, buffer);
@@ -100,7 +107,7 @@ int main(void){
 			while (current != NULL)
 			{
 				printf("Send to %s/%d: %s\n",inet_ntoa((current->addr).sin_addr), ntohs((current->addr).sin_port), buffer);
-				if ((numbytes=sendto(sockfd, tempbuff, strlen(buffer), 0, 
+				if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
 					(struct sockaddr *)&(current->addr), sizeof(struct sockaddr))) == -1){
 					perror("sendto");
 					exit(1);
@@ -113,7 +120,7 @@ int main(void){
 		{
 			if (!isUsernameAvailable(buffer))
 			{
-				if ((numbytes=sendto(sockfd, "usrErr", strlen(buffer), 0, 
+				if ((numbytes=sendto(sockfd, "usrErr", strlen("usrErr"), 0, 
 					(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
 					perror("sendto");
 					exit(1);
@@ -260,6 +267,7 @@ bool isUsernameAvailable(char *username){
 		{
 			return 0;
 		}
+		current = current->next; 
 	}
 	return 1; 
 }

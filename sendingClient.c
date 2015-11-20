@@ -7,6 +7,7 @@
 	has to be specified.
 */
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,6 +21,8 @@
 
 #define PORT 5000    //sending through port 5000
 
+void endHandler(int dummy); //handles ending with ctrl+c
+
 int main(int argc, char *argv[]){
 	int sockfd;
 	struct sockaddr_in server;
@@ -28,6 +31,8 @@ int main(int argc, char *argv[]){
 	char buffer[80];
 	char username[10];
 	int addr_len = sizeof(struct sockaddr);
+
+	signal(SIGINT, endHandler);
 
 	if (argc != 3) {
 		fprintf(stderr,"use: clientProgramName serverIPaddr username[10]\n");
@@ -109,3 +114,11 @@ int main(int argc, char *argv[]){
 	close(sockfd);
 	return 0;
 } 
+
+void endHandler(int dummy) {
+    if ((numbytes=sendto(sockfd, "/q", strlen("/q"), 0,
+				(struct sockaddr *)&server, sizeof(struct sockaddr))) == -1){
+			perror("sendto");
+			exit(1);
+		}
+}
