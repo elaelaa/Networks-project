@@ -109,7 +109,7 @@ int main(void){
 			else if (startsWith("/p ", buffer)){
 
 			   char senderUsername[10];
-			   strcpy(senderUsername, tempbuff);
+			   strncpy(senderUsername, tempbuff, 10);
 
 			   const char s[2] = " ";
 			   char *token;
@@ -119,12 +119,13 @@ int main(void){
 			   token = strtok(NULL, s);
 			   char receiverUsername[10];
 			   char tempmsg[70];
-			   strcpy(receiverUsername, token);
+			   strncpy(receiverUsername, token, 10);
+			   token = strtok(NULL, s);
 
 			   while( token != NULL ) 
 			   {
-			   		token = strtok(NULL, s);
 			   		strcat(tempmsg, token);
+			   		token = strtok(NULL, s);
 			   }
 
 			   sprintf(tempbuff, "PrivateMSG from %s: %s", senderUsername, tempmsg);
@@ -248,7 +249,7 @@ int addAddressToBuff(struct sockaddr_in addr, char *username){
 	newStruct->username = strdup(username);
 	newStruct->addr = addr; 
 	//the port number of listening client needs to be separately defined
-	(newStruct->addr).sin_port = htons(CPORT); 
+	//(newStruct->addr).sin_port = htons(CPORT); 
 
 	newStruct->next = NULL; 
 

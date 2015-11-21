@@ -30,13 +30,12 @@ struct sockaddr_in server;
 int main(int argc, char *argv[]){
 	struct hostent *he;
 	char buffer[80];
-	char username[10];
 	int addr_len = sizeof(struct sockaddr);
 
 	signal(SIGINT, endHandler);
 
-	if (argc != 3) {
-		fprintf(stderr,"use: clientProgramName serverIPaddr username[10]\n");
+	if (argc != 2) {
+		fprintf(stderr,"use: clientProgramName serverIPaddr\n");
 		exit(1);
 	}
 
@@ -45,12 +44,6 @@ int main(int argc, char *argv[]){
 		perror("gethostbyname");
 		exit(1);
 	}
-
-	if (strlen(argv[2])>10){
-		perror("username too long");
-		exit(1);
-	}
-	strcpy(username, argv[2]);
 
 	//socket("tcp-ip", "datagram", "udp")
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
@@ -62,40 +55,6 @@ int main(int argc, char *argv[]){
 	server.sin_port = htons(PORT); 
 	server.sin_addr = *((struct in_addr *)he->h_addr);
 	memset(&(server.sin_zero), '\0', 8); 
-
-	//Send given username
-	if ((numbytes=sendto(sockfd, username, strlen(username), 0,
-				(struct sockaddr *)&server, sizeof(struct sockaddr))) == -1){
-			perror("sendto");
-			exit(1);
-	}
-
-	do{
-		if ((numbytes=recvfrom(sockfd, buffer, 80-1 , 0, (struct sockaddr *) &server, &addr_len)) == -1) {
-			perror("Error in recvfrom");
-			exit(1);
-		}
-		buffer[numbytes] = '\0';
-		//printf("Received from %s/%d: %s\n",inet_ntoa(server.sin_addr), ntohs(server.sin_port), buffer);
-		if (strcmp("usrErr", buffer) != 0)
-		{
-			printf("%s\n", buffer);
-			break;
-		}
-		printf("Username not available. Write a new one: \n");
-		fgets(buffer, 80, stdin);
-		buffer[strlen(buffer)-1] = '\0';
-		while(strlen(buffer)>10){
-			printf("Username too long. Write a new one: \n");
-			fgets(buffer, 80, stdin);
-			buffer[strlen(buffer)-1] = '\0';
-		}
-		if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0,
-				(struct sockaddr *)&server, sizeof(struct sockaddr))) == -1){
-			perror("sendto");
-			exit(1);
-		}
-	}while(1);
 
 	do{
 // Read a string from command line
@@ -122,7 +81,7 @@ void endHandler(int dummy) {
 			perror("sendto");
 			exit(1);
 		}
-		
+
 	close(sockfd);
 	exit(0); 
 }
