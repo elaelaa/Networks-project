@@ -34,6 +34,12 @@ int main(int argc, char *argv[]){
 		exit(1);
 	}
 
+	//he = host entity
+	if ((he=gethostbyname(argv[1])) == NULL) {
+		perror("gethostbyname");
+		exit(1);
+	}
+
 	if (strlen(argv[2])>10){
 		perror("username too long");
 		exit(1);
