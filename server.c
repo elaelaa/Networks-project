@@ -18,7 +18,6 @@
 #include <arpa/inet.h>
 
 #define PORT 5000 //define port
-#define CPORT 7000 //define listening client port
 
 struct addrUsername
 {

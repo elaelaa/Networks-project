@@ -56,6 +56,8 @@ int main(int argc, char *argv[]){
 	server.sin_addr = *((struct in_addr *)he->h_addr);
 	memset(&(server.sin_zero), '\0', 8); 
 
+	printf("Instructions:\n Open listening client first to join the chat. \n \"/p username message\" for private messages.\n \"/q\" for quitting.\n");
+
 	do{
 // Read a string from command line
 		printf("Write a message: ");
