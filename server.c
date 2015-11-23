@@ -21,10 +21,9 @@
 
 struct addrUsername
 {
-	struct sockaddr_in addr; 
-	char *username; 
+	struct sockaddr_in addr; //address of client
+	char *username; //username of client
 	struct addrUsername *next; //points to the next structure in "list" or null if is the last
-
 };
 
 int addAddressToBuff(struct sockaddr_in addr, char *username);
@@ -73,7 +72,7 @@ int main(void){
 
 	do{
 
-	// Revieve string of the client 
+		// Revieve string of the client 
 		if ((numbytes=recvfrom(sockfd, buffer, 80-1 , 0, 
 				(struct sockaddr *) &client, &addr_len)) == -1) {
 			perror("Error in recvfrom");
@@ -84,6 +83,7 @@ int main(void){
 		printf("Received from %s/%d: %s\n",inet_ntoa(client.sin_addr), 
 						ntohs(client.sin_port), buffer);
 
+		//Check if client IP address is already known
 		if (isInBuffer(&client)) 
 		{
 			char tempbuff[110]; 
@@ -92,9 +92,18 @@ int main(void){
 
 			//if the string received is /q the user wants to quit and is deleted from the address list
 			if (strcmp(buffer,"/q") == 0){
+				//send "/q" to the sender (listening client) to kill it
+				if ((numbytes=sendto(sockfd, "/q", strlen("/q"), 0, 
+						(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
+						perror("sendto");
+						exit(1);
+					}
+				//deletes user from addresses
 				deleteAddr(&client);
 				current = first; 
+				//tempbuff already has the username, add leaving string
 				strcat(tempbuff, " just left the chat.");
+				//send tempbuff to all the clients
 				while (current)
 				{
 					if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
@@ -108,7 +117,7 @@ int main(void){
 			else if (startsWith("/p ", buffer)){
 
 			   char senderUsername[10];
-			   strncpy(senderUsername, tempbuff, 10);
+			   strncpy(senderUsername, tempbuff, 10); //stores senders username 
 
 			   const char s[2] = " ";
 			   char *token;
@@ -118,27 +127,35 @@ int main(void){
 			   token = strtok(NULL, s);
 			   char receiverUsername[10];
 			   char tempmsg[70];
-			   strncpy(receiverUsername, token, 10);
+			   strncpy(receiverUsername, token, 10); //stores receivers username
 			   token = strtok(NULL, s);
 
+			   strcpy(tempmsg, "");
+
+			   //loop words of private message and make message string
 			   while( token != NULL ) 
 			   {
 			   		strcat(tempmsg, token);
+			   		strcat(tempmsg, " ");
 			   		token = strtok(NULL, s);
 			   }
 
+			   //create string to be sent
 			   sprintf(tempbuff, "PrivateMSG from %s: %s", senderUsername, tempmsg);
 
-			   client = getAddrByUsername(receiverUsername);
+			   client = getAddrByUsername(receiverUsername); //get the address of the receiver
+			   //send to the receiver
 			   if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
 						(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
 						perror("sendto");
 						exit(1);
 					}
 
+				//create string to be send to sender
 				sprintf(tempbuff, "PrivateMSG to %s: %s", receiverUsername, tempmsg);
 
-				client = getAddrByUsername(senderUsername);
+				client = getAddrByUsername(senderUsername); //get the address of the sender
+				//send to the sender
 			   	if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
 						(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
 						perror("sendto");
@@ -148,15 +165,15 @@ int main(void){
 
 			}
 			else{
-				printf("%s\n", tempbuff); 
 				//add message (buffer) to tempbuff which contains the username
 				strcat(tempbuff, ": ");
 				strcat(tempbuff, buffer);
 
 				current = first; 
+				//loop through all the addresses and send the message with the username
 				while (current != NULL)
 				{
-					printf("Send to %s/%d: %s\n",inet_ntoa((current->addr).sin_addr), ntohs((current->addr).sin_port), buffer);
+					//printf("Send to %s/%d: %s\n",inet_ntoa((current->addr).sin_addr), ntohs((current->addr).sin_port), buffer);
 					if ((numbytes=sendto(sockfd, tempbuff, strlen(tempbuff), 0, 
 						(struct sockaddr *)&(current->addr), sizeof(struct sockaddr))) == -1){
 						perror("sendto");
@@ -169,8 +186,12 @@ int main(void){
 		}
 		else 
 		{
+			//executed if the IP address is new
+			//check if username is available
 			if (!isUsernameAvailable(buffer))
 			{
+				//send usrErr to sender to tell to give new username
+				//asking the username again is handled in the listeningClient
 				if ((numbytes=sendto(sockfd, "usrErr", strlen("usrErr"), 0, 
 					(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
 					perror("sendto");
@@ -180,13 +201,15 @@ int main(void){
 			else{
 
 				char *username;
-				username = strdup(buffer);
+				username = strdup(buffer); //store the username from the buffer
 
-				//Add address to address buffer
+				//Add address & username to address buffer
+				//returned value users is the number of users in chat
 				users = addAddressToBuff(client, buffer);
 
-				//Send welcome message to listening client 
+				//Store message to the buffer
 				sprintf(buffer, "Welcome to the chat! Currently we have %d users: ", users);
+				//Loop through all the users and add their username to the message
 				current = first; 
 				while (current != NULL)
 				{
@@ -194,15 +217,19 @@ int main(void){
 					strcat(buffer, current->username);
 					current = current->next; 
 				}
-				printf("Sending %s\n", buffer);
+				//printf("Sending %s\n", buffer);
+
+				//send the welcome message and the usernames (buffer) to the new user
 				if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0, 
 						(struct sockaddr *) &client, sizeof(struct sockaddr))) == -1){
 						perror("sendto");
 						exit(1);
 				}
 
-				//Send new users username to all the clients in chat 
+				//Write new message to the buffer
 				sprintf(buffer, "%s joined the chat", username);
+				
+				//loop through all the users and send them message saying that new user joined
 				current = first; 
 				while (current != NULL)
 				{
@@ -238,6 +265,7 @@ int main(void){
 	return 0;
 }
 
+//add new address and username to address list, returns number of users
 int addAddressToBuff(struct sockaddr_in addr, char *username){
 
 	int users = 0; 
@@ -245,19 +273,17 @@ int addAddressToBuff(struct sockaddr_in addr, char *username){
 	//allocate memory for the new addrUsername structure
 	struct addrUsername *newStruct = malloc(sizeof(struct addrUsername));
 
-	newStruct->username = strdup(username);
-	newStruct->addr = addr; 
-	//the port number of listening client needs to be separately defined
-	//(newStruct->addr).sin_port = htons(CPORT); 
+	newStruct->username = strdup(username); //store the username
+	newStruct->addr = addr; //store address
 
-	newStruct->next = NULL; 
+	newStruct->next = NULL; //initialize next as empty
 
-	//first is a global variable pointing to the first addrUsername structure
+	//first is a global variable pointing to the first addrUsername structure of our buffer
 	if (!first)
 	{
 		//if there is no first addrUsername structure, the new structure is set as the first
 		first = newStruct; 
-		users++; 
+		users++; //count number of users
 	}
 	else
 	{	
@@ -269,14 +295,15 @@ int addAddressToBuff(struct sockaddr_in addr, char *username){
 		while (current->next != NULL)
 		{
 			current = current->next; 
-			users++; 
+			users++; //count the users 
 		}
 		current->next = newStruct; 
 		users++; 
 	}
-	return users; 
+	return users; //return number of users
 }
 
+//returns username by IP address
 char *getUserName(struct sockaddr_in *addr){
 	struct addrUsername *current; 
 	current = first; 
@@ -292,6 +319,7 @@ char *getUserName(struct sockaddr_in *addr){
 	return NULL; 
 }
 
+//checks if given IP is in the address list and returns true (1) or false (0)
 bool isInBuffer(struct sockaddr_in *addr){
 	struct addrUsername *current; 
 	current = first; 
@@ -307,6 +335,7 @@ bool isInBuffer(struct sockaddr_in *addr){
 	return 0; 
 }
 
+//checks if username is available 
 bool isUsernameAvailable(char *username){
 	struct addrUsername *current; 
 	current = first; 
@@ -321,11 +350,13 @@ bool isUsernameAvailable(char *username){
 	return 1; 
 }
 
+//returns address when username is known
 struct sockaddr_in getAddrByUsername(char *username){
 	struct addrUsername *current; 
 	current = first; 
 	while (current != NULL)
 	{
+		//compares username in struct to given parameter username
 		if (strcmp(current->username, username) == 0)
 		{
 			return current->addr; 
@@ -334,7 +365,7 @@ struct sockaddr_in getAddrByUsername(char *username){
 	}
 }
 
-
+//deletes address from the address list
 void deleteAddr(struct sockaddr_in *addr){
 	struct addrUsername *current; 
 	struct addrUsername *former = NULL; 
@@ -370,6 +401,7 @@ void deleteAddr(struct sockaddr_in *addr){
 	free(current);
 }
 
+//check if string starts with some string
 bool startsWith(const char *pre, const char *str)
 {
    if(strncmp(pre, str, strlen(pre)) == 0) return 1;

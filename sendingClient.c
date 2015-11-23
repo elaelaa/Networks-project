@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#define PORT 5000    //sending through port 5000
+#define PORT 5000    //PORT number of the server
 
 void endHandler(int dummy); //handles ending with ctrl+c
 
@@ -32,7 +32,7 @@ int main(int argc, char *argv[]){
 	char buffer[80];
 	int addr_len = sizeof(struct sockaddr);
 
-	signal(SIGINT, endHandler);
+	signal(SIGINT, endHandler); //handles ctrl+c ending
 
 	if (argc != 2) {
 		fprintf(stderr,"use: clientProgramName serverIPaddr\n");
@@ -56,14 +56,16 @@ int main(int argc, char *argv[]){
 	server.sin_addr = *((struct in_addr *)he->h_addr);
 	memset(&(server.sin_zero), '\0', 8); 
 
+	//print instructions of the program use
 	printf("Instructions:\n Open listening client first to join the chat. \n \"/p username message\" for private messages.\n \"/q\" for quitting.\n");
 
 	do{
-// Read a string from command line
+		// Read a string from command line
 		printf("Write a message: ");
 		fgets(buffer, 80, stdin);
 		buffer[strlen(buffer)-1] = '\0';
-// Send string to server
+		
+		// Send string to server
 		if ((numbytes=sendto(sockfd, buffer, strlen(buffer), 0,
 				(struct sockaddr *)&server, sizeof(struct sockaddr))) == -1){
 			perror("sendto");
