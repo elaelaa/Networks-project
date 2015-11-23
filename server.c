@@ -33,6 +33,7 @@ char *getUserName(struct sockaddr_in *addr);
 bool isInBuffer(struct sockaddr_in *addr);
 bool startsWith(const char *pre, const char *str); 
 struct sockaddr_in getAddrByUsername(char *username);
+struct sockaddr_in getAddrByAddress(struct sockaddr_in *addr);
 
 //pointer to the first addrUsername structure in list
 struct addrUsername *first = NULL; 
@@ -92,9 +93,13 @@ int main(void){
 
 			//if the string received is /q the user wants to quit and is deleted from the address list
 			if (strcmp(buffer,"/q") == 0){
+				
+				//get the address of the listening client
+				struct sockaddr_in lcaddr = getAddrByAddress(&client);
+
 				//send "/q" to the sender (listening client) to kill it
 				if ((numbytes=sendto(sockfd, "/q", strlen("/q"), 0, 
-						(struct sockaddr *)&client, sizeof(struct sockaddr))) == -1){
+						(struct sockaddr *) &lcaddr, sizeof(struct sockaddr))) == -1){
 						perror("sendto");
 						exit(1);
 					}
@@ -358,6 +363,21 @@ struct sockaddr_in getAddrByUsername(char *username){
 	{
 		//compares username in struct to given parameter username
 		if (strcmp(current->username, username) == 0)
+		{
+			return current->addr; 
+		}
+		current = current->next; 
+	}
+}
+
+//returns listener address by IP
+struct sockaddr_in getAddrByAddress(struct sockaddr_in *addr){
+	struct addrUsername *current; 
+	current = first; 
+	//loop to go thourgh all the addresses and check if the wanted address is found
+	while (current != NULL)
+	{
+		if (((current->addr).sin_addr).s_addr == (&addr->sin_addr)->s_addr)
 		{
 			return current->addr; 
 		}
